@@ -3,6 +3,8 @@
 Level-building tools for Godot as gdsh commands (mcp-sh-godot bridge / Editor Console), on top of
 plain GDScript modules usable from any tool script.
 
+Install: see [Command packages](https://github.com/brohd11/godot-gdsh/blob/main/_export_ignore/docs/packages.md) in the gdsh repo.
+
 ```
 level probe X,Z...                         ground height/normal per provider (debug ground setup)
 ... | level snap [--lowest] [--align]      drop nodes onto the ground (undoable)
@@ -37,10 +39,3 @@ How the ground is resolved (`src/ground.gd`), selected per command with `--groun
 Physics works with any collider, including ground addons that build editor collision. It was checked
 in the Godot 4.7 editor with Jolt. Physics rays also hit props (tree canopies, rocks), so when scattering
 near other objects, use `--mask=` with the ground's layer, or register a provider for the ground.
-
-## Status
-Commands extend the neutral `res://addons/_lib/gdsh/src/core/command_base.gd`. mcp-sh-godot 0.1.6
-only rebuilds commands against its own gdsh when they are outside `res://` or under `res://.mcp-sh/`.
-**Until it rebuilds by registered folder (load_package), register `cmd/` by absolute path** in
-`res://.mcp-sh/godot/bridge.json` `commandDirs`. `mcp_sh_godot gdsh add` stores a `res://` path, so
-edit the file by hand. Then restart the bridge.
