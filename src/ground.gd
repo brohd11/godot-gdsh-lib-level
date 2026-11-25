@@ -5,10 +5,15 @@ extends RefCounted
 ## Providers are scripts whose _init takes the scene root. They come from:
 ##   --ground=physics            colliders only
 ##   --ground=res://x.gd[,y.gd]  these providers, then physics as the fallback
-##   --ground=auto (default)     the providers listed in ProjectSettings SETTING, then physics
+##   --ground=auto (default)     the providers listed in ProjectSettings SETTING, then those that
+##                               sibling packages declare, then physics
+## A sibling package (beside level, wherever both are installed) declares its provider in its
+## package.cfg:  [level] ground_provider="src/my_ground.gd"  (relative to that package).
 ## Level tools never know which addon a provider belongs to.
 
 const SETTING := "gdsh_lib/level/ground_providers"
+const SECTION := "level"
+const KEY := "ground_provider"
 const GroundPhysics = preload("ground_physics.gd")
 
 
@@ -56,12 +61,46 @@ static func registered_providers() -> PackedStringArray:
 	return PackedStringArray(ProjectSettings.get_setting(SETTING, PackedStringArray()))
 
 
+## Provider script paths that sibling packages declare ([level] ground_provider in their
+## package.cfg), by package folder name.
+static func discovered_providers() -> PackedStringArray:
+	var out := PackedStringArray()
+	# src/ground_physics.gd -> level -> the folder level and its siblings are installed in.
+	var physics_script: Script = GroundPhysics
+	var level_dir := ProjectSettings.localize_path(physics_script.resource_path).get_base_dir().get_base_dir()
+	if level_dir.is_empty():
+		return out
+	var parent := level_dir.get_base_dir()
+	var dirs := Array(DirAccess.get_directories_at(parent))
+	dirs.sort()
+	for name: String in dirs:
+		var pkg := parent.path_join(name)
+		if name.begins_with(".") or pkg == level_dir:
+			continue
+		var cfg := ConfigFile.new()
+		if cfg.load(pkg.path_join("package.cfg")) != OK:
+			continue
+		var rel = cfg.get_value(SECTION, KEY, "")
+		if not rel is String or rel.is_empty():
+			continue
+		var path := pkg.path_join(rel).simplify_path()
+		if path.begins_with(pkg + "/") and FileAccess.file_exists(path):
+			out.append(path)
+	return out
+
+
 ## Builds a ground for the scene. errors receives unloadable provider paths.
 static func make(root: Node, spec := "auto", mask: int = 0xFFFFFFFF, errors: PackedStringArray = PackedStringArray()) -> Chain:
 	var chain := Chain.new()
 	var paths := PackedStringArray()
 	if spec == "auto" or spec == "":
 		paths = registered_providers()
+		var seen := {}
+		for p in paths:
+			seen[ProjectSettings.localize_path(p.strip_edges())] = true
+		for p in discovered_providers():
+			if not seen.has(p):
+				paths.append(p)
 	elif spec != "physics":
 		paths = spec.split(",", false)
 	for p in paths:

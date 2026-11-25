@@ -3,7 +3,8 @@ extends "res://addons/_lib/gdsh/src/core/command_base.gd"
 
 const _HELP = \
 "Level building: place, scatter and snap nodes onto the ground, bounds, ground probing.
-Ground = registered providers (ProjectSettings gdsh_lib/level/ground_providers) then physics colliders;
+Ground = registered providers (ProjectSettings gdsh_lib/level/ground_providers), then providers that
+sibling packages declare ([level] ground_provider in their package.cfg), then physics colliders;
 override per command with --ground=physics|res://provider.gd.
 Usage: level <subcommand>"
 

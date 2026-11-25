@@ -32,9 +32,18 @@ func normal_at(x: float, z: float) -> Vector3
 ```
 
 How the ground is resolved (`src/ground.gd`), selected per command with `--ground=`:
-- `auto` (the default): the providers in ProjectSettings `gdsh_lib/level/ground_providers` (script paths, tried in order), then physics.
+- `auto` (the default): the providers in ProjectSettings `gdsh_lib/level/ground_providers` (script paths, tried in order), then the providers sibling packages declare (below), then physics.
 - `physics`: colliders only. A downward ray in the scene's World3D. The node being placed is excluded, and `--mask=` limits the layers.
 - `res://a.gd[,b.gd]`: those providers, then physics.
+
+A package installed beside level (in `addons/_lib/gdsh_lib/` or a command root's `packages/`) can
+provide a ground with nothing to register: declare the script, relative to the package, in its
+`package.cfg`. gdsh_lib/terrain3d does this.
+
+```ini
+[level]
+ground_provider="src/my_ground.gd"
+```
 
 Physics works with any collider, including ground addons that build editor collision. It was checked
 in the Godot 4.7 editor with Jolt. Physics rays also hit props (tree canopies, rocks), so when scattering
